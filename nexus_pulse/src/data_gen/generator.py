@@ -46,7 +46,7 @@ def generate_users(num_users: int) -> pd.DataFrame:
         'user_id': user_ids,
         'user_tier': tiers,
         'pre_exp_spend_14d': pre_exp_spend,
-        'signup_date': signup_dates.dt.strftime('%Y-%m-%d')
+        'signup_date': signup_dates.strftime('%Y-%m-%d')
     })
 
 def generate_assignments(user_ids: np.ndarray, inject_srm: bool) -> pd.DataFrame:
@@ -132,11 +132,13 @@ def generate_events(users_df: pd.DataFrame, assignments_df: pd.DataFrame, num_ac
     checkout_conv = atc_conv & (np.random.rand(num_sessions) < 0.35)
     checkout_ts = atc_ts + pd.to_timedelta(np.random.randint(60, 181, size=num_sessions), unit='s')
     
-    # Revenue logic
-    base_revenue = (session_spend * 0.7) + np.random.gamma(shape=2.0, scale=10.0, size=num_sessions)
+    # Revenue logic explicitly requested by user
+    gamma_noise = np.random.gamma(2.0, 6.0, size=num_sessions)
+    base_revenue = (session_spend * 0.75) + gamma_noise
+    
     treatment_mask = (session_variant == 'treatment')
-    revenue = base_revenue
-    revenue[treatment_mask] = revenue[treatment_mask] * 1.045
+    revenue = base_revenue.copy()
+    revenue[treatment_mask] = revenue[treatment_mask] * 1.06
     revenue = np.round(revenue, 2)
     
     # Construct event DataFrames
@@ -180,7 +182,7 @@ def main():
     parser = argparse.ArgumentParser(description="NexusPulse Synthetic Data Generator")
     parser.add_argument('--num-users', type=int, default=100000, help="Total number of users to generate")
     parser.add_argument('--active-users', type=int, default=30000, help="Number of active users generating events")
-    parser.add_argument('--inject-srm', action='store_true', help="Inject SRM (52.5% Control / 47.5% Treatment)")
+    parser.add_argument('--inject-srm', action='store_true', help="Inject SRM (52.5%% Control / 47.5%% Treatment)")
     parser.add_argument('--output-dir', type=str, default='data/raw', help="Output directory for parquet files")
     
     args = parser.parse_args()
@@ -208,6 +210,15 @@ def main():
     
     # 3. Events
     events_df = generate_events(users_df, assignments_df, args.active_users)
+    
+    # Zero out pre_exp_spend for inactive users so correlation holds for the overall ITT population
+    active_user_ids = events_df['user_id'].unique()
+    users_df.loc[~users_df['user_id'].isin(active_user_ids), 'pre_exp_spend_14d'] = 0.0
+    
+    # Save Users again
+    users_df.to_parquet(users_path, compression='snappy', index=False)
+    
+    # Save Events
     events_path = os.path.join(args.output_dir, 'events.parquet')
     events_df.to_parquet(events_path, compression='snappy', index=False)
     
