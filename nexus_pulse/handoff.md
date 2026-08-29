@@ -76,17 +76,27 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Developed `test_stats.py` checking the mathematical boundaries of the variance reduction algorithms, ensuring unbiased CUPED treatment effects, and asserting strict SRM trap handling on intentionally skewed allocations.
   - Designed `test_api.py` leveraging `TestClient` to test route integrity and JSON schema mapping.
 
+### Phase 8: Containerization & Documentation
+- **Production Containerization**:
+  - Created a robust `Dockerfile` leveraging `python:3.11-slim` base image.
+  - Configured `docker-compose.yml` to orchestrate both `nexus-api` and `nexus-dashboard` services seamlessly on a unified bridge network.
+  - Implemented resilient health checks and configured volume mapping (`./data:/app/data`) for persistence.
+- **Revamped Repository Documentation**:
+  - Finalized the project `README.md` with an executive pitch and a clear Mermaid architecture diagram.
+  - Documented key mathematical formulations in LaTeX (CUPED, variance reduction, Cluster-Robust SEs, and Pearson Chi-Square).
+  - Highlighted empirical benchmarks (e.g., 56.17% variance reduction) and detailed local and Docker quickstart guides.
+
 ## 2. Current State of the Workspace
 All code is functional, comprehensively tested, and up-to-date in the `nexus_pulse/` directory. 
 - **Raw Data**: `nexus_pulse/data/raw/`
 - **Processed Data**: `nexus_pulse/data/processed/`
-- **Dashboard**: Run `streamlit run src/api/app.py` to view the UI.
-- **FastAPI Server**: Run `python src/api/main.py` and view the Swagger documentation via `http://localhost:8000/docs`.
+- **Docker Deployment**: Run `docker compose up --build` from the root directory to instantly boot both the backend API and frontend Dashboard.
+- **Dashboard (Local)**: Run `streamlit run src/api/app.py` to view the UI.
+- **FastAPI Server (Local)**: Run `python src/api/main.py` and view the Swagger documentation via `http://localhost:8000/docs`.
 - **Test Suite**: Run `pytest tests/ -v` to validate statistical bounds and application routes.
 
 ## 3. Next Steps
-Phase 1 through Phase 7 requirements have been successfully implemented! Future iterations could include:
+Phase 1 through Phase 12 requirements (represented across the 8 major milestones above) have been successfully implemented! Future iterations could include:
 1. Connecting the Streamlit Dashboard directly to the active FastAPI endpoints for live data hydration.
 2. Adding more complex covariates for CUPED (like user tier or categorical features).
 3. Implementing more advanced causal models (e.g. Double Machine Learning).
-4. Containerizing the FastAPI application and Data Engine via Docker for cloud orchestration.
