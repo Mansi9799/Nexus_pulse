@@ -26,6 +26,10 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Developed a native DuckDB SQL Common Table Expression (CTE) to track user progression across a 4-stage funnel (`page_view` -> `search` -> `add_to_cart` -> `checkout`).
   - Computes stage-to-stage drop-off conversion rates, overall conversion per variant, and segmented conversion rates by `user_tier`.
   - Provides natively formatted Pandas tabular outputs for CLI testing and consumption.
+- **Cohort Retention Analytics (`src/analytics/retention.py`)**:
+  - Implemented cohort retention analysis using DuckDB CTEs to compute Day 1, Day 3, Day 7, and Day 14 retention percentages relative to assignment timestamps.
+  - Segmented the retention matrix by `variant` ('control' vs 'treatment') and simulated `device_type` ('mobile', 'desktop', 'tablet').
+  - Persists the processed results to `data/processed/cohort_retention.parquet` with Snappy compression for downstream usage.
 - **Causal Inference Engine (`src/stats/cuped.py`)**:
   - Implemented the **CUPED** (Controlled Experiment Using Pre-Experiment Data) algorithm to heavily reduce the variance of the post-experiment spend metric (achieving ~27.5% variance reduction).
   - Implemented **Cluster-Robust Standard Errors** (Huber-White Sandwich Estimator) clustered by user tier to ensure rigorous hypothesis testing.
