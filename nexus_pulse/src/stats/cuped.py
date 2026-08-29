@@ -88,3 +88,100 @@ def check_srm(df: pd.DataFrame, variant_col: str = 'variant', expected_proportio
         'observed_control': observed[0],
         'observed_treatment': observed[1]
     }
+
+class CUPEDAnalyzer:
+    def __init__(self):
+        pass
+
+    def fit_transform(self, df, target='post_exp_spend', covariate='pre_exp_spend_14d'):
+        cov_val = df[target].cov(df[covariate])
+        var_x = df[covariate].var()
+        
+        if var_x == 0:
+            theta = 0
+        else:
+            theta = cov_val / var_x
+            
+        mean_x = df[covariate].mean()
+        y_cuped = df[target] - theta * (df[covariate] - mean_x)
+        
+        df = df.copy()
+        df[f'{target}_cuped'] = y_cuped
+        
+        var_y = df[target].var()
+        var_y_cuped = y_cuped.var()
+        delta_var = (1 - var_y_cuped / var_y) * 100 if var_y != 0 else 0
+        
+        metadata = {
+            'theta': theta,
+            'variance_reduction_percentage': delta_var,
+            'target': target,
+            'covariate': covariate
+        }
+        
+        return df, metadata
+
+    def run_ttest(self, df, metric_col='post_exp_spend_cuped', alpha=0.05):
+        control_data = df[df['variant'] == 'control'][metric_col].dropna()
+        treatment_data = df[df['variant'] == 'treatment'][metric_col].dropna()
+        
+        t_stat, p_value = stats.ttest_ind(treatment_data, control_data, equal_var=False)
+        
+        mean_control = control_data.mean()
+        mean_treatment = treatment_data.mean()
+        abs_lift = mean_treatment - mean_control
+        rel_lift_pct = (abs_lift / mean_control) * 100 if mean_control != 0 else 0
+        
+        return {
+            'control_mean': mean_control,
+            'treatment_mean': mean_treatment,
+            'absolute_lift': abs_lift,
+            'relative_lift_pct': rel_lift_pct,
+            't_stat': t_stat,
+            'p_value': p_value,
+            'significant': p_value < alpha
+        }
+
+if __name__ == '__main__':
+    import os
+    
+    # Read experiment_mart.parquet
+    mart_path = 'data/processed/experiment_mart.parquet'
+    
+    # Assume script run from nexus_pulse root, fallback to relative 
+    file_path = mart_path
+    if not os.path.exists(file_path):
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        file_path = os.path.join(base_dir, mart_path)
+        
+    df = pd.read_parquet(file_path)
+    
+    analyzer = CUPEDAnalyzer()
+    
+    # Fit transform
+    df_cuped, meta = analyzer.fit_transform(df, target='post_exp_spend', covariate='pre_exp_spend_14d')
+    
+    # run t-test for raw
+    res_raw = analyzer.run_ttest(df_cuped, metric_col='post_exp_spend')
+    
+    # run t-test for cuped
+    res_cuped = analyzer.run_ttest(df_cuped, metric_col='post_exp_spend_cuped')
+    
+    print(f"Optimal Theta: {meta['theta']:.4f}")
+    print(f"Variance Reduction: {meta['variance_reduction_percentage']:.2f}%\n")
+    
+    # Print comparison table
+    print(f"{'-'*100}")
+    print(f"{'Metric':<25} | {'Control Mean':<15} | {'Treatment Mean':<15} | {'Lift %':<10} | {'p-value':<10} | {'Significance'}")
+    print(f"{'-'*100}")
+    print(f"{'Raw Spend':<25} | {res_raw['control_mean']:<15.4f} | {res_raw['treatment_mean']:<15.4f} | {res_raw['relative_lift_pct']:<10.2f} | {res_raw['p_value']:<10.4f} | {res_raw['significant']}")
+    print(f"{'CUPED Spend':<25} | {res_cuped['control_mean']:<15.4f} | {res_cuped['treatment_mean']:<15.4f} | {res_cuped['relative_lift_pct']:<10.2f} | {res_cuped['p_value']:<10.4f} | {res_cuped['significant']}")
+    print(f"{'-'*100}\n")
+    
+    # Save the CUPED-enriched dataset
+    out_path = 'data/processed/cuped_metrics.parquet'
+    if not os.path.exists('data/processed'):
+        out_path = os.path.join(base_dir, 'data/processed/cuped_metrics.parquet')
+    
+    df_cuped.to_parquet(out_path, engine='pyarrow', compression='snappy')
+    print(f"Saved CUPED-enriched dataset to {out_path}")

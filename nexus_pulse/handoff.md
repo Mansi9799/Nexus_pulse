@@ -40,14 +40,24 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - **Tab 2**: CUPED & Causal Stats highlighting variance reduction, overlaid metric distributions, and standard vs. CUPED p-values.
   - **Tab 3**: Diagnostics & Robustness containing the SRM check and Cluster-Robust vs. Naive standard error comparisons.
 
+### Phase 4: Master Analytical Mart
+- **Unified Feature Store (`src/analytics/build_mart.py`)**:
+  - Developed a highly optimized DuckDB ingestion script to unify `users.parquet`, `assignments.parquet`, and `user_post_metrics.parquet` into a single unified experiment feature store.
+  - Successfully preserved the full Intention-To-Treat population of 50,000 users via robust LEFT JOINs and NULL coalescing (zero-activity users appropriately padded with zeros).
+  - Designed engineered features including `spend_delta` (post vs pre experiment), `is_treatment` indicator, and `has_converted` flag.
+  - Mocked the missing `device_type` user attribute efficiently using a deterministic SQL CASE statement to match downstream expectations.
+  - Exported the clean, correctly typed table to `data/processed/experiment_mart.parquet` utilizing Snappy compression.
+  - Included strict validation tests ensuring complete data fidelity across all 50,000 subjects with zero nulls on critical outcome metrics.
+
 ## 2. Current State of the Workspace
 All code is functional and up-to-date in the `nexus_pulse/` directory. 
 - **Raw Data**: `nexus_pulse/data/raw/`
-- **Processed Data**: `nexus_pulse/data/processed/`
+- **Processed Data**: `nexus_pulse/data/processed/` (now featuring the finalized `experiment_mart.parquet`)
 - **Dashboard**: Run `streamlit run src/api/app.py` to view the UI.
 
 ## 3. Next Steps
-All Phase 1, Phase 2, and Phase 3 requirements have been fully successfully implemented! Next steps could include:
-1. Adding more complex covariates for CUPED (like user tier or categorical features).
-2. Implementing more advanced causal models (e.g. Double Machine Learning).
-3. Moving the data backend from local parquet to a cloud data warehouse (Snowflake / BigQuery).
+All Phase 1, Phase 2, Phase 3, and Phase 4 requirements have been fully successfully implemented! Next steps could include:
+1. Connecting the Dashboard directly to the unified `experiment_mart.parquet` to simplify backend queries.
+2. Adding more complex covariates for CUPED (like user tier or categorical features).
+3. Implementing more advanced causal models (e.g. Double Machine Learning) using the new engineered features.
+4. Moving the data backend from local parquet to a cloud data warehouse (Snowflake / BigQuery).
