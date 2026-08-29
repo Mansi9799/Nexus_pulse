@@ -49,10 +49,18 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Exported the clean, correctly typed table to `data/processed/experiment_mart.parquet` utilizing Snappy compression.
   - Included strict validation tests ensuring complete data fidelity across all 50,000 subjects with zero nulls on critical outcome metrics.
 
+### Phase 5: Object-Oriented CUPED Refactor
+- **CUPEDAnalyzer Class (`src/stats/cuped.py`)**:
+  - Refactored the causal inference logic into a cohesive `CUPEDAnalyzer` class.
+  - Implemented `fit_transform` to compute the optimal theta ($Cov(Y, X) / Var(X)$) and append the `post_exp_spend_cuped` metric, dynamically capturing variance reduction metadata (~27.54%).
+  - Implemented `run_ttest` utilizing Welch's t-test (`equal_var=False`) to surface Mean, Lift %, and p-value metrics.
+  - Added a self-contained execution runner that processes `experiment_mart.parquet`, outputs a side-by-side comparison table of raw vs. CUPED metrics, and saves the final enriched dataframe.
+  - Exported the final dataset to `data/processed/cuped_metrics.parquet` utilizing PyArrow and Snappy compression.
+
 ## 2. Current State of the Workspace
 All code is functional and up-to-date in the `nexus_pulse/` directory. 
 - **Raw Data**: `nexus_pulse/data/raw/`
-- **Processed Data**: `nexus_pulse/data/processed/` (now featuring the finalized `experiment_mart.parquet`)
+- **Processed Data**: `nexus_pulse/data/processed/` (now featuring `experiment_mart.parquet` and the newly generated `cuped_metrics.parquet`)
 - **Dashboard**: Run `streamlit run src/api/app.py` to view the UI.
 
 ## 3. Next Steps
