@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  nexus-api:
+    build: .
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-network
+
+  nexus-dashboard:
+    build: .
+    command: streamlit run src/api/app.py --server.port 8501 --server.address 0.0.0.0
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8501:8501"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-network
+    depends_on:
+      nexus-api:
+        condition: service_healthy
+
+networks:
+  nexus-network:
+    driver: bridge

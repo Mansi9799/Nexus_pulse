@@ -64,15 +64,29 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Clustered on `user_tier` to adjust for within-cluster correlation.
   - Outputs a detailed comparison table with Beta, Standard Error, t-stat, p-value, 95% CIs, SE Inflation Ratio, and Degrees of Freedom.
 
+### Phase 7: Production API & Testing Suite
+- **FastAPI Application (`src/api/main.py`)**:
+  - Developed a production-grade FastAPI web service utilizing CORS middleware and `Pydantic` v2 type validations.
+  - Exposed `GET /health` to monitor service uptime and data mart integrity.
+  - Built the `POST /api/v1/experiment/evaluate` programmatic evaluation pipeline, combining SRM diagnostics, CUPED analytics, and Cluster-Robust standard errors to generate an automated `ROLLOUT` or `REJECT` decision.
+  - Added `GET /api/v1/analytics/funnel` resolving native DuckDB SQL queries to frontend-ready JSON payloads.
+  - Deployed recursive NumPy-to-Python scalar type serialization to ensure clean, parseable JSON schema exports.
+- **Automated Testing Suite (`tests/`)**:
+  - Implemented fully automated unit and integration tests powered by `pytest` and `httpx`.
+  - Developed `test_stats.py` checking the mathematical boundaries of the variance reduction algorithms, ensuring unbiased CUPED treatment effects, and asserting strict SRM trap handling on intentionally skewed allocations.
+  - Designed `test_api.py` leveraging `TestClient` to test route integrity and JSON schema mapping.
+
 ## 2. Current State of the Workspace
-All code is functional and up-to-date in the `nexus_pulse/` directory. 
+All code is functional, comprehensively tested, and up-to-date in the `nexus_pulse/` directory. 
 - **Raw Data**: `nexus_pulse/data/raw/`
-- **Processed Data**: `nexus_pulse/data/processed/` (now featuring `experiment_mart.parquet` and the newly generated `cuped_metrics.parquet`)
+- **Processed Data**: `nexus_pulse/data/processed/`
 - **Dashboard**: Run `streamlit run src/api/app.py` to view the UI.
+- **FastAPI Server**: Run `python src/api/main.py` and view the Swagger documentation via `http://localhost:8000/docs`.
+- **Test Suite**: Run `pytest tests/ -v` to validate statistical bounds and application routes.
 
 ## 3. Next Steps
-All Phase 1, Phase 2, Phase 3, Phase 4, Phase 5, and Phase 6 requirements have been fully successfully implemented! Next steps could include:
-1. Connecting the Dashboard directly to the unified `experiment_mart.parquet` to simplify backend queries.
+Phase 1 through Phase 7 requirements have been successfully implemented! Future iterations could include:
+1. Connecting the Streamlit Dashboard directly to the active FastAPI endpoints for live data hydration.
 2. Adding more complex covariates for CUPED (like user tier or categorical features).
-3. Implementing more advanced causal models (e.g. Double Machine Learning) using the new engineered features.
-4. Moving the data backend from local parquet to a cloud data warehouse (Snowflake / BigQuery).
+3. Implementing more advanced causal models (e.g. Double Machine Learning).
+4. Containerizing the FastAPI application and Data Engine via Docker for cloud orchestration.
