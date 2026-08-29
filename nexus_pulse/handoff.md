@@ -57,6 +57,13 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Added a self-contained execution runner that processes `experiment_mart.parquet`, outputs a side-by-side comparison table of raw vs. CUPED metrics, and saves the final enriched dataframe.
   - Exported the final dataset to `data/processed/cuped_metrics.parquet` utilizing PyArrow and Snappy compression.
 
+### Phase 6: Cluster-Robust Standard Errors
+- **ClusterRobustInference Class (`src/stats/cluster_se.py`)**:
+  - Ingests `cuped_metrics.parquet`.
+  - Implements Naive OLS and Huber-White Clustered Sandwich Estimator using `statsmodels`.
+  - Clustered on `user_tier` to adjust for within-cluster correlation.
+  - Outputs a detailed comparison table with Beta, Standard Error, t-stat, p-value, 95% CIs, SE Inflation Ratio, and Degrees of Freedom.
+
 ## 2. Current State of the Workspace
 All code is functional and up-to-date in the `nexus_pulse/` directory. 
 - **Raw Data**: `nexus_pulse/data/raw/`
@@ -64,7 +71,7 @@ All code is functional and up-to-date in the `nexus_pulse/` directory.
 - **Dashboard**: Run `streamlit run src/api/app.py` to view the UI.
 
 ## 3. Next Steps
-All Phase 1, Phase 2, Phase 3, and Phase 4 requirements have been fully successfully implemented! Next steps could include:
+All Phase 1, Phase 2, Phase 3, Phase 4, Phase 5, and Phase 6 requirements have been fully successfully implemented! Next steps could include:
 1. Connecting the Dashboard directly to the unified `experiment_mart.parquet` to simplify backend queries.
 2. Adding more complex covariates for CUPED (like user tier or categorical features).
 3. Implementing more advanced causal models (e.g. Double Machine Learning) using the new engineered features.
