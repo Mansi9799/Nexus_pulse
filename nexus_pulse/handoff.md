@@ -22,6 +22,10 @@ This document summarizes the progress made on the NexusPulse (Distributed Produc
   - Overall Conversion Rate: 17.08%
 
 ### Phase 3: Analytics & Streamlit Dashboard
+- **Funnel Analytics (`src/analytics/funnel.py`)**:
+  - Developed a native DuckDB SQL Common Table Expression (CTE) to track user progression across a 4-stage funnel (`page_view` -> `search` -> `add_to_cart` -> `checkout`).
+  - Computes stage-to-stage drop-off conversion rates, overall conversion per variant, and segmented conversion rates by `user_tier`.
+  - Provides natively formatted Pandas tabular outputs for CLI testing and consumption.
 - **Causal Inference Engine (`src/stats/cuped.py`)**:
   - Implemented the **CUPED** (Controlled Experiment Using Pre-Experiment Data) algorithm to heavily reduce the variance of the post-experiment spend metric (achieving ~27.5% variance reduction).
   - Implemented **Cluster-Robust Standard Errors** (Huber-White Sandwich Estimator) clustered by user tier to ensure rigorous hypothesis testing.
