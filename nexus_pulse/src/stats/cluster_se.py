@@ -32,6 +32,8 @@ class ClusterRobustInference:
         
         se_inflation = cluster_se / naive_se if naive_se != 0 else np.nan
         
+        dof = cluster_model.df_resid
+        
         results = {
             "Naive OLS": {
                 "Treatment Effect (Beta)": naive_beta,
@@ -41,6 +43,7 @@ class ClusterRobustInference:
                 "95% CI Lower": naive_ci[0],
                 "95% CI Upper": naive_ci[1],
                 "SE Inflation Ratio": 1.0,
+                "Degrees of Freedom": naive_model.df_resid
             },
             "Huber-White Clustered": {
                 "Treatment Effect (Beta)": cluster_beta,
@@ -50,6 +53,7 @@ class ClusterRobustInference:
                 "95% CI Lower": cluster_ci[0],
                 "95% CI Upper": cluster_ci[1],
                 "SE Inflation Ratio": se_inflation,
+                "Degrees of Freedom": dof
             }
         }
         
