@@ -86,6 +86,21 @@ def health_check():
         service_uptime=f"{uptime_seconds}s"
     )
 
+import numpy as np
+
+def to_native(obj):
+    if isinstance(obj, dict):
+        return {k: to_native(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [to_native(v) for v in obj]
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    return obj
+
 @app.post("/api/v1/experiment/evaluate", response_model=ExperimentEvalResponse)
 def evaluate_experiment(req: ExperimentEvalRequest):
     """
@@ -101,6 +116,7 @@ def evaluate_experiment(req: ExperimentEvalRequest):
     
     # Step 1: Runs SRM check via SRMDetector
     srm_diagnostics = SRMDetector.check(df, req.expected_control_ratio)
+    srm_diagnostics = to_native(srm_diagnostics)
     
     if srm_diagnostics.get('srm_detected', False):
         return ExperimentEvalResponse(
@@ -126,6 +142,7 @@ def evaluate_experiment(req: ExperimentEvalRequest):
     cuped_metric_name = f"{req.metric_col}_cuped"
     cuped_inference = analyzer.run_ttest(df_cuped, metric_col=cuped_metric_name, alpha=req.alpha)
     cuped_inference['metadata'] = meta  # Enrich with variance reduction metrics
+    cuped_inference = to_native(cuped_inference)
     
     # Step 3: Runs ClusterRobustInference on the CUPED-adjusted metric clustered by req.cluster_col
     if req.cluster_col not in df_cuped.columns:
@@ -143,9 +160,7 @@ def evaluate_experiment(req: ExperimentEvalRequest):
     )
     
     clustered_stats = comparison_df.loc["Huber-White Clustered"].to_dict()
-    
-    # Convert clustered_stats scalar types (e.g., numpy float/int) to native Python types for JSON serialization
-    clustered_stats = {k: float(v) if pd.api.types.is_numeric_dtype(type(v)) else v for k, v in clustered_stats.items()}
+    clustered_stats = to_native(clustered_stats)
     
     # Step 4: Decision Rule
     clustered_p_value = clustered_stats.get("p-value", 1.0)

@@ -42,7 +42,7 @@ def test_cuped_unbiased_treatment_effect():
 def test_srm_detector_true_negative():
     df = load_mart()
     srm_diagnostics = SRMDetector.check(df, expected_control_ratio=0.50)
-    assert srm_diagnostics['srm_detected'] is False
+    assert srm_diagnostics['srm_detected'] == False
     assert srm_diagnostics['p_value'] > 0.01
 
 def test_srm_detector_true_positive():
@@ -54,7 +54,7 @@ def test_srm_detector_true_positive():
     })
     
     srm_diagnostics = SRMDetector.check(df, expected_control_ratio=0.50)
-    assert srm_diagnostics['srm_detected'] is True
+    assert srm_diagnostics['srm_detected'] == True
     assert srm_diagnostics['p_value'] < 0.001
 
 def test_cluster_robust_se_inflation():
